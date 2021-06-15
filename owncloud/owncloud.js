@@ -69,7 +69,7 @@ function ownCloud(instance) {
  * @returns {Promise.<error>}     string: error message, if any.
  */
 ownCloud.prototype.login = function(username, password) {
-    var basicAuth = "Basic " + new Buffer(username + ":" + password).toString('base64');
+    var basicAuth = "Basic " + Buffer.from(username + ":" + password).toString('base64');
     helpers.setAuthorization(basicAuth);
 
     var self = this;

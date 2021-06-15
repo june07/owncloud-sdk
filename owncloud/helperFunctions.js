@@ -3,12 +3,32 @@
 /////////////////////////////
 
 var Promise = require('promise');
-var request = require('request');
+var axios = require('axios');
+const axiosRetry = require('axios-retry');
 var parser = require('./xmlParser.js');
 var parser2 = require('xml-js');
 var fs = require('fs');
 var utf8 = require('utf8');
 var fileInfo = require('./fileInfo.js');
+
+require('axios-debug-log')({
+    request: function (debug, config) {
+      debug('Request with ', config.method, config.headers)
+    },
+    response: function (debug, response) {
+      debug(
+        'Response with ' + response.status,
+        'from ' + response.config.url
+      )
+    },
+    error: function (debug, error) {
+      // Read https://www.npmjs.com/package/axios#handling-errors for more info
+      debug('Boom', error)
+    }
+  })
+
+axiosRetry(axios, { retries: 3, retryDelay: axiosRetry.exponentialDelay });
+
 
 /**
  * @class helpers
@@ -150,6 +170,8 @@ helpers.prototype._makeOCSrequest = function(method, service, action, data) {
         err = "Please specify an authorization first.";
     }
 
+    if (err) return Promise.reject(err)
+
     // Set the headers
     var headers = {
         authorization: this._authHeader,
@@ -171,27 +193,22 @@ helpers.prototype._makeOCSrequest = function(method, service, action, data) {
         headers: headers,
     };
 
+    const params = new URLSearchParams()
+    if (data) {
+        Object.entries(data).map(kv => params.append(kv[0], kv[1]))
+    }
     if (method === 'PUT' || method === 'DELETE') {
         options.headers['content-type'] = 'application/x-www-form-urlencoded';
-        options.form = data;
+        options.params = params
     } else {
         options.headers['content-type'] = 'multipart/form-data';
-        options.formData = data;
+        options.params = params
     }
 
 	return new Promise((resolve, reject) => {
 		// Start the request
-		request(options, function(error, response, body) {
-			if (err) {
-				reject(err);
-				return;
-			}
-			if (error) {
-			    //console.log(error);
-				reject('Please provide a valid owncloud instance');
-				return;
-			}
-
+		axios(options).then(response => {
+            const body = response.data
 			try {
     			var tree = parser.xml2js(body);
 				error = self._checkOCSstatus(tree);
@@ -216,13 +233,16 @@ helpers.prototype._makeOCSrequest = function(method, service, action, data) {
 					return;
 				}
 			}
-
 			resolve({
 				response: response,
 				body: body,
                 data: tree
 			});
-		});
+		})
+        .catch(error => {
+            reject(error);
+            return;
+        })
     });
 };
 
@@ -246,6 +266,8 @@ helpers.prototype._makeDAVrequest = function(method, path, headerData, body) {
     if (!this._authHeader) {
         err = "Please specify an authorization first.";
     }
+
+    if (err) return Promise.reject(err)
 
     path = self._normalizePath(path);
     path = encodeURIComponent(path);
@@ -271,24 +293,21 @@ helpers.prototype._makeDAVrequest = function(method, path, headerData, body) {
     options.body = body;
 
     return new Promise((resolve, reject) => {
-        if (err) {
-            reject(err);
-        }
         // Start the request
-        request(options, function(error, response, body) {
-            if (error) {
-                reject(error);
-		return;
-            }
-            if ([200, 207].indexOf(response.statusCode) > -1) {
+        axios(options).then(response => {
+            const body = response.data
+            if ([200, 207].indexOf(response.status) > -1) {
                 self._parseDAVresponse(resolve, reject, body);
-            } else if ([201, 204].indexOf(response.statusCode) > -1) {
+            } else if ([201, 204].indexOf(response.status) > -1) {
                 resolve(true);
             } else {
                 var err = self._parseDAVerror(body);
                 reject(err);
             }
-        });
+        })
+        .catch(error => {
+            reject(error)
+        })
     });
 };
 
@@ -357,6 +376,8 @@ helpers.prototype._get = function(url) {
         err = "Please specify an authorization first.";
     }
 
+    if (err) return Promise.reject(err)
+
     var headers = {
         authorization: this._authHeader,
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -370,22 +391,15 @@ helpers.prototype._get = function(url) {
     };
 
     return new Promise((resolve, reject) => {
-        if (err) {
-            reject(err);
-            return;
-        }
-
         // Start the request
-        request(options, function(error, response, body) {
-            if (error) {
-                reject(error);
-            } else {
-                resolve({
-                    response: response,
-                    body: body
-                });
-            }
-        });
+        axios(options).then(response => {
+            const body = response.data
+            resolve({
+                response: response,
+                body: body
+            });
+        })
+        .catch(error => { reject(error) })
     });
 };
 
@@ -408,6 +422,8 @@ helpers.prototype._writeData = function(url, fileName) {
         err = "Please specify an authorization first.";
     }
 
+    if (err) return Promise.reject(err)
+
     var headers = {
         authorization: this._authHeader,
         'Content-Type': 'application/octet-stream'
@@ -421,11 +437,6 @@ helpers.prototype._writeData = function(url, fileName) {
     };
 
     return new Promise((resolve, reject) => {
-        if (err) {
-            reject(err);
-            return;
-        }
-
         var isPossible = 1;
 
         try {
@@ -438,31 +449,34 @@ helpers.prototype._writeData = function(url, fileName) {
 
         // Start the request
         /* jshint unused : false */
-        request(options, function(err2, response, body) {
-                if (err2) {
-                    reject(err2);
-                }
-
-                if (response.statusCode === 200 && isPossible === 1 && body.split('\n')[0] !== "<!DOCTYPE html>") {
-                    resolve(true);
-                } else {
-                    try {
-                        var err = self._parseDAVerror(body);
-                        reject(err);
-                    } catch (error) {
-                        if (body.search("<li class=\"error\">") > -1) {
-                            reject('specified file/folder could not be located');
-                        } else {
-                            reject("Current user is not logged in");
-                        }
+        axios(options)
+        .then(response => {
+            const body = response.data
+            if (response.status === 200 && isPossible === 1 && body.split('\n')[0] !== "<!DOCTYPE html>") {
+                response.data.pipe(fs.createWriteStream(fileName));
+                resolve(true);
+            } else {
+                try {
+                    var err = self._parseDAVerror(body);
+                    reject(err);
+                } catch (error) {
+                    if (body.search("<li class=\"error\">") > -1) {
+                        reject('specified file/folder could not be located');
+                    } else {
+                        reject("Current user is not logged in");
                     }
                 }
-            })
-            .on('error', function(error) {
-                reject(error);
-                return;
-            })
-            .pipe(fs.createWriteStream(fileName));
+            }
+        })
+        .on('error', function(error) {
+            if (error.request) {
+                reject(error.request)
+                return
+            } else if (error.response) {
+                reject(error.response)
+                return
+            }
+        })
         /* jshint unused : true */
     });
 };
@@ -486,18 +500,20 @@ helpers.prototype._readFile = function(path, localPath, headers) {
             var url = self._webdavUrl + self._encodeString(path);
             /* jshint unused : false */
             fs.createReadStream(localPath)
-                .pipe(request.put({
-                    url: url,
-                    headers: headers
-                }, function(error, response, body) {
-                    if (response.statusCode >= 400) {
-                        var parsedError = self._parseDAVerror(body);
-                        parsedError = parsedError || 'not allowed';
-                        reject(parsedError);
-                    } else {
-                        resolve(true);
-                    }
-                }));
+                .pipe(axios.put({
+                        url: url,
+                        headers: headers
+                    })
+                    .then(response => {
+                        if (response.status >= 400) {
+                            var parsedError = self._parseDAVerror(body);
+                            parsedError = parsedError || 'not allowed';
+                            reject(parsedError);
+                        } else {
+                            resolve(true);
+                        }
+                    })
+                )
             /* jshint unused : true */
         } catch (err) {
             reject(err);
