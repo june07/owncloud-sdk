@@ -44,7 +44,6 @@
   "dependencies": {
     "axios": "^0.21.1",
     "axios-retry": "^3.1.9",
-    "browserify-fs": "^1.0.0",
     "jasmin": "^0.0.2",
     "promise": "^8.1.0",
     "utf8": "^3.0.0",
