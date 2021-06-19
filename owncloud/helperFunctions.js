@@ -10,6 +10,7 @@ var parser2 = require('xml-js');
 var fs = require('fs');
 var utf8 = require('utf8');
 var fileInfo = require('./fileInfo.js');
+var FormData = require('form-data');
 
 if (process.env.NODE_ENV !== 'production') require('axios-debug-log')({
     request: function (debug, config) {
@@ -193,16 +194,24 @@ helpers.prototype._makeOCSrequest = function(method, service, action, data) {
         headers: headers,
     };
 
-    const params = new URLSearchParams()
-    if (data) {
-        Object.entries(data).map(kv => params.append(kv[0], kv[1]))
-    }
     if (method === 'PUT' || method === 'DELETE') {
+        if (data) {
+            let params = new URLSearchParams()
+            Object.entries(data).map(kv => params.append(kv[0], kv[1]))
+            options.params = params
+        }
         options.headers['content-type'] = 'application/x-www-form-urlencoded';
-        options.params = params
-    } else {
-        options.headers['content-type'] = 'multipart/form-data';
-        options.params = params
+    } else if (method === 'POST') {
+        if (data) {
+            let form = new FormData()
+            Object.entries(data).map(kv => {
+                field = kv[0],
+                value = kv[1]
+                form.append(field, value)
+            })
+            options.data = form
+            options.headers = { ...form.getHeaders(), ...options.headers }
+        }
     }
 
 	return new Promise((resolve, reject) => {
@@ -290,7 +299,7 @@ helpers.prototype._makeDAVrequest = function(method, path, headerData, body) {
         options.headers[key] = headerData[key];
     }
 
-    options.body = body;
+    options.data = body
 
     return new Promise((resolve, reject) => {
         // Start the request
