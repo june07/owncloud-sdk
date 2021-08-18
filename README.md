@@ -4,9 +4,7 @@
   <img src="https://i.imgur.com/9mKra3O.png" />
 </p>
 
-Use this light-weight JS library with a promise based interface for seaemless communication with your ownCloud instance.<br>
-Supports both Node.JS and browser JS.
-
+The main purpose of this form was to update the deps (mainly request which is now deprecated) and axios, axios-retry, and form-data basically take the place of the request package.  Further the node-lts branch is the primary branch of concern as owncloud sdk in general is designed to run in the browser not node.
 
 ## Install
 
