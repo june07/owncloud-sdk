@@ -104,15 +104,13 @@ files.prototype.getFileContents = function (path) {
  * @returns {Promise.<status>}  boolean: whether the operation was successful
  * @returns {Promise.<error>}   string: error message, if any.
  */
-files.prototype.putFileContents = function (path, content, options = {}) {
+files.prototype.putFileContents = function (path, content) {
     return new Promise((resolve, reject) => {
-        if (options.overwrite) {
-            const headerData = {
-                'If-None-Match': '',
-            }
+        const headerData = {
+            'If-None-Match': '',
         }
         helpers
-            ._makeDAVrequest('PUT', path, headerData, content)
+            ._makeDAVrequest('PUT', path, null, content)
             .then((status) => {
                 resolve(status)
             })
