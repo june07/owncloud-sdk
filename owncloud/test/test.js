@@ -126,7 +126,7 @@ describe("Currently testing Login and initLibrary,", function() {
         oc = new ownCloud(owncloudURL);
 
         oc.login(username, password).then(status => {
-            expect(status).toEqual({id: 'admin', 'display-name': 'admin', email: {}});
+            expect(status).toEqual({id: 'test', 'display-name': 'test', email: 'test.owncloud@onezerohosting.com'});
             done();
         }).catch(error => {
         	console.log(error);
@@ -867,7 +867,6 @@ describe("Currently testing file sharing,", function () {
     describe("sharedFilesWithGroup,", function() {
         beforeEach(function(done) {
             var count = 0;
-
     		for (var i=0;i<testFiles.length;i++) {
     			oc.shares.shareFileWithGroup(testFiles[i], testGroup, {perms: 19}).then(share => {
     				expect(typeof(share)).toEqual('object');
@@ -887,7 +886,6 @@ describe("Currently testing file sharing,", function () {
 
         afterEach(function(done) {
             var count = 0;
-
     		for (var file in sharedFilesWithGroup) {
     			oc.shares.deleteShare(sharedFilesWithGroup[file]).then(status => {
     				expect(status).toEqual(true);
@@ -1087,7 +1085,7 @@ describe("Currently testing file sharing,", function () {
 	beforeEach(function (done) {
 		oc = new ownCloud(owncloudURL);
 		oc.login(username, password).then(status => {
-            expect(status).toEqual({id: 'admin', 'display-name': 'admin', email: {}});
+            expect(status).toEqual({id: 'test','display-name': 'test', email: 'test.owncloud@onezerohosting.com'});
 			return oc.users.createUser(testUser, testUserPassword);
 		}).then(status2 => {
 			expect(status2).toBe(true);
@@ -1487,7 +1485,7 @@ describe("Currently testing group management,", function() {
     beforeEach(function(done) {
         oc = new ownCloud(owncloudURL);
         oc.login(username, password).then(status => {
-            expect(status).toEqual({id: 'admin', 'display-name': 'admin', email: {}});
+            expect(status).toEqual({id: 'test','display-name': 'test', email: 'test.owncloud@onezerohosting.com'});
 			return oc.groups.createGroup(testGroup);
 		}).then(status2 => {
 			expect(status2).toBe(true);
@@ -1567,7 +1565,7 @@ describe("Currently testing files management,", function () {
 	beforeEach(function(done) {
 		oc = new ownCloud(owncloudURL);
 		oc.login(username, password).then(status => {
-			expect(status).toEqual({id: 'admin', 'display-name': 'admin', email: {}});
+			expect(status).toEqual({id: 'test','display-name': 'test', email: 'test.owncloud@onezerohosting.com'});
 			done();
 		}).catch(error => {
 			expect(error).toBe(null);

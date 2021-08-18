@@ -12,7 +12,7 @@ var utf8 = require('utf8');
 var fileInfo = require('./fileInfo.js');
 var FormData = require('form-data');
 
-if (process.env.NODE_ENV !== 'production') require('axios-debug-log')({
+if (process.env.NODE_ENV === 'development') require('axios-debug-log')({
     request: function (debug, config) {
       debug('Request with ', config.method, config.headers)
     },
