@@ -1,6 +1,6 @@
 {
   "name": "@667/js-owncloud-client",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "ownCloud client library for JavaScript",
   "main": "./owncloud/index.js",
   "keywords": [
@@ -16,12 +16,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/june07/js-owncloud-client.git"
+    "url": "git+https://github.com/june07/owncloud-sdk.git"
   },
   "author": "June07 <667@june07.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/june07/js-owncloud-client/issues"
+    "url": "https://github.com/june07/owncloud-sdk/issues"
   },
   "scripts": {
     "testXmlParser": "node_modules/.bin/jasmine ./owncloud/test/testXmlParser.js",
@@ -31,7 +31,7 @@
     "testMainDebug": "DEBUG=axios node_modules/.bin/jasmine ./owncloud/test/test.js",
     "test": "npm run -s testXmlParser && npm run -s testUnauthenticated && npm run -s testUnauthorized && npm run -s testMain"
   },
-  "homepage": "https://github.com/june07/js-owncloud-client#readme",
+  "homepage": "https://github.com/june07/owncloud-sdk#readme",
   "devDependencies": {
     "axios-debug-log": "^0.8.2",
     "browser-request": "^0.3.3",
