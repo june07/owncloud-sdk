@@ -12,6 +12,8 @@ var utf8 = require('utf8');
 var fileInfo = require('./fileInfo.js');
 var FormData = require('form-data');
 
+axios.defaults.maxBodyLength = 'Infinity'
+
 if (process.env.NODE_ENV === 'development') require('axios-debug-log')({
     request: function (debug, config) {
       debug('Request with ', config.method, config.headers)
